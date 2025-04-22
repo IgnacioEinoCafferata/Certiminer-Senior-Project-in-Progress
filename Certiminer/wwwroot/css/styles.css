@@ -1,0 +1,145 @@
+﻿/* ✅ GENERAL STYLES */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-image: url('../images/mine.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    color: white;
+    overflow-x: hidden;
+}
+
+/* ✅ HEADER */
+header {
+    padding: 10px 20px;
+    position: relative;
+    z-index: 1;
+    width: 100% !important;
+    background-color: #0047AB;
+}
+
+.logo {
+    font-size: 60px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    color: #FFD700;
+}
+
+    .logo img {
+        margin: 0 10px;
+    }
+
+.nav-item,
+.btn-yellow {
+    background-color: #FFD700;
+    color: #0047AB;
+    font-weight: bold;
+    padding: 10px 30px;
+    font-size: 18px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+    border: none;
+    text-align: center;
+}
+
+    .nav-item:hover,
+    .btn-yellow:hover {
+        background-color: #0047AB;
+        color: #FFD700;
+        border: 2px solid #FFD700;
+    }
+
+
+
+/* ✅ HOMEPAGE LAYOUT */
+.page-background {
+    background-image: url('../images/mine.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 120px 20px 60px 20px;
+}
+
+/* ✅ FOOTER */
+footer.footer {
+    background-color: #333 !important;
+    color: white !important;
+    padding: 20px !important;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2;
+}
+
+/* ✅ FORM STYLES */
+.centered-form-box {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 100%;
+    margin: 100px auto;
+}
+
+/* ✅ BUTTONS */
+.btn-yellow {
+    background-color: #FFD700;
+    border: 2px solid #facc15; /* yellow-400 */
+    color: #0047AB;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+    .btn-yellow:hover {
+        background-color: #0047AB; /* blue-700 */
+        color: #FFD700;
+        border-color: #FFD700;
+    }
+
+    .btn-yellow.active {
+        background-color: #0047AB;
+        color: #FFD700;
+        border-color: #FFD700;
+    }
+
+
+/* ✅ FOOTER TEXT */
+footer .container {
+    font-size: 14px;
+}
+/* Ensure that active Manage buttons have yellow borders, blue background, and yellow text */
+.nav-item .nav-link.active {
+    background-color: #0047AB !important; /* Blue background */
+    color: #FFD700 !important; /* Yellow text */
+    border: 2px solid #FFD700   !important; /* Yellow border */
+}
+
+/* Also, style the hover effect for the Manage buttons */
+.nav-item .nav-link:hover {
+    background-color: #0047AB !important; /* Blue background on hover */
+    color: #FFD700 !important; /* Yellow text on hover */
+    border: 2px solid #FFD700 !important; /* Yellow border on hover */
+}
+

@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Certiminer</title>
+
+    <!-- Core styles -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Certiminer.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+</head>
+<body class="overflow-x-hidden">
+
+    <header>
+        <div class="d-flex justify-content-between align-items-center flex-wrap container">
+            <div class="logo d-flex align-items-center">
+                <a href="/" class="text-decoration-none d-flex align-items-center">
+                    <span style="font-size: 50px; font-weight: bold; color: #FFD700;">CER</span>
+                    <img src="/Images/pickaxe-icon.png" alt="Pickaxe Icon" width="60px" class="mx-2" />
+                    <span style="font-size: 50px; font-weight: bold; color: #FFD700;">IMINE</span>
+                </a>
+            </div>
+            <div class="d-flex gap-3 flex-wrap mt-3 mt-md-0">
+                @using Microsoft.AspNetCore.Identity
+                @inject SignInManager<IdentityUser> SignInManager
+                @inject UserManager<IdentityUser> UserManager
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/Identity/Account/Manage" class="nav-item btn-yellow">@($"Hello {User.Identity.Name}!")</a>
+                            <a href="javascript:void(0);" onclick="document.getElementById('logoutForm').submit();" class="nav-item btn-yellow">Logout</a>
+                            <form id="logoutForm" method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })" style="display:none;"></form>
+                        </div>
+                  
+
+                }
+                else
+                {
+                    <a class="nav-item btn-yellow" href="/Identity/Account/Register">Register</a>
+                    <a class="nav-item btn-yellow" href="/Identity/Account/Login">Log In</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content rendered here -->
+    <main role="main" class="pb-3">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer text-muted">
+        <div class="container">
+            &copy; 2025 - Certiminer - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
