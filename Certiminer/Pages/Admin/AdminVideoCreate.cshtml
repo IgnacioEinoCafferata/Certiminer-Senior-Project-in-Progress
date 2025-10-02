@@ -1,0 +1,57 @@
+﻿@page
+@model Certiminer.Pages.Admin.AdminVideoEditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <h2>@Model.PageTitle</h2>
+            <form method="post">
+                <div class="mb-3">
+                    <label asp-for="Input.Title" class="form-label"></label>
+                    <input asp-for="Input.Title" class="form-control" />
+                    <span class="text-danger" asp-validation-for="Input.Title"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Url" class="form-label"></label>
+                    <input asp-for="Input.Url" class="form-control"
+                           placeholder="https://youtu.be/xxxx  OR  dQw4w9WgXcQ  OR  /videos/file.mp4" />
+                    <span class="text-danger" asp-validation-for="Input.Url"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Source Type</label>
+                    <select asp-for="Input.SourceType" class="form-select">
+                        <option value="1">YouTube</option>
+                        <option value="2">File (MP4)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Chapter</label>
+                    <select asp-for="Input.FolderId" class="form-select">
+                        <option value="">-- (none) --</option>
+                        @foreach (var f in Model.Chapters)
+                        {
+                            <option value="@f.Id">@f.Name</option>
+                        }
+                    </select>
+                    <span class="text-muted small">Optional. Videos belong to a Chapter, not to a Test.</span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" asp-for="Input.IsActive" />
+                    <label class="form-check-label">Active</label>
+                </div>
+
+                <button class="btn btn-yellow">Save</button>
+                <a asp-page="/Admin/AdminVideos" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

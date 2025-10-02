@@ -1,0 +1,78 @@
+﻿@page "/Admin/Chapters"
+@model Certiminer.Pages.Admin.AdminChaptersModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+@{
+    ViewData["Title"] = "Chapters";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <h2>Chapters</h2>
+
+            @if (TempData["Err"] is string err)
+            {
+                <div class="alert alert-danger">@err</div>
+            }
+
+            <form method="post" asp-page-handler="Create" class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <input asp-for="NewName" class="form-control" placeholder="New chapter name" />
+                    <span class="text-danger" asp-validation-for="NewName"></span>
+                </div>
+                <div class="col-md-auto">
+                    <button class="btn btn-yellow">+ Add Chapter</button>
+                </div>
+            </form>
+
+            <table class="table align-middle">
+                <thead>
+                    <tr><th>Name</th><th class="text-end">Actions</th></tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Any())
+                    {
+                        foreach (var c in Model.Items)
+                        {
+                            <tr>
+                                <td>@c.Name</td>
+                                <td class="text-end">
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="d-inline"
+                                          onsubmit="return confirm('Delete this chapter?');">
+                                        <button class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-1"
+                                            data-bs-toggle="collapse" data-bs-target="#rn-@c.Id">
+                                        Rename
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="rn-@c.Id">
+                                <td colspan="2">
+                                    <form method="post" asp-page-handler="Rename" class="row g-2">
+                                        <input type="hidden" name="RenameId" value="@c.Id" />
+                                        <div class="col-md-6">
+                                            <input name="RenameTo" class="form-control" value="@c.Name" />
+                                        </div>
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-primary btn-sm">Save</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="2" class="text-muted">No chapters yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

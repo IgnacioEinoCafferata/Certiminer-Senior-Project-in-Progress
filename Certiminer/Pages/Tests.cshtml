@@ -1,0 +1,71 @@
+﻿@page
+@model Certiminer.Pages.TestsModel
+@{
+    ViewData["Title"] = "Take Test";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+
+            @if (Model.Current is null)
+            {
+                <h2>Select Chapter</h2>
+
+                @if (Model.Chapters.Count == 0)
+                {
+                    <p class="text-muted">No chapters yet. Create folders (Kind = Chapters) and assign tests to them.</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var f in Model.Chapters)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@f.Name</span>
+                                <a class="btn btn-outline-primary btn-sm"
+                                   asp-page="/Tests" asp-route-folderId="@f.Id">Open</a>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+            else
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>@Model.Current.Name</h2>
+                    <a class="btn btn-secondary btn-sm" asp-page="/Tests">Back</a>
+                </div>
+
+                @if (Model.Tests.Count == 0)
+                {
+                    <p class="text-muted">No tests in this chapter.</p>
+                }
+                else
+                {
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Test</th>
+                                <th class="text-end">Start</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model.Tests)
+                            {
+                                <tr>
+                                    <td>@t.Title</td>
+                                    <td class="text-end">
+                                        <a class="btn btn-yellow btn-sm"
+                                           asp-page="/TakeTest" asp-route-testId="@t.Id">Start</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+
+        </div>
+    </div>
+</section>

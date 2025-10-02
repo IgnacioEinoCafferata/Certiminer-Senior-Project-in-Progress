@@ -1,0 +1,59 @@
+﻿@page "/Progress"
+@model Certiminer.Pages.ProgressModel
+@{
+    ViewData["Title"] = "Your Progress";
+}
+
+<section class="container py-4">
+    <div class="glass-panel p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="m-0">Progress</h2>
+            <div class="fs-3 fw-bold">@Model.PercentComplete%</div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <h5 class="mb-2">Completed tests</h5>
+                @if (!Model.Done.Any())
+                {
+                    <div class="text-muted">You haven't taken any test yet.</div>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var it in Model.Done)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@it.Title</span>
+                                <span class="badge bg-success">Score: @it.Score / @it.Total</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="col-lg-6">
+                <h5 class="mb-2">Pending tests</h5>
+                @if (!Model.Pending.Any())
+                {
+                    <div class="text-muted">No pending tests. 🎉</div>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var it in Model.Pending)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@it.Title</span>
+                                <a class="btn btn-sm btn-yellow" asp-page="/TakeTest" asp-route-testId="@it.TestId">Take test</a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <hr class="my-4" />
+    </div>
+</section>

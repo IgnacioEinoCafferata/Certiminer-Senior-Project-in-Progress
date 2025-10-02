@@ -1,0 +1,55 @@
+﻿@page
+@model Certiminer.Pages.StudyModel
+@{
+    ViewData["Title"] = "Study Material";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <h2 class="mb-3">Chapters</h2>
+
+            @if (Model.Chapters.Count > 0 || Model.UnassignedCount > 0)
+            {
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Chapter</th>
+                            <th class="text-center" style="width:140px;">Videos</th>
+                            <th class="text-end" style="width:160px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ch in Model.Chapters)
+                        {
+                            <tr>
+                                <td>@ch.Title</td>
+                                <td class="text-center">@ch.Count</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-page="/Videos" asp-route-folderId="@ch.Id">Open</a>
+                                </td>
+                            </tr>
+                        }
+
+                        @if (Model.UnassignedCount > 0)
+                        {
+                            <tr>
+                                <td><em>Unassigned videos</em></td>
+                                <td class="text-center">@Model.UnassignedCount</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-page="/Videos" asp-route-unassigned="true">Open</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">No chapters yet.</p>
+            }
+        </div>
+    </div>
+</section>

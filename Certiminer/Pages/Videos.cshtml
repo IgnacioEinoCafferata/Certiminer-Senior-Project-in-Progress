@@ -1,0 +1,44 @@
+﻿@page
+@model Certiminer.Pages.VideosModel
+@{
+    ViewData["Title"] = Model.Chapter is null ? "Videos" : $"Videos - {Model.Chapter.Name}";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2>@ViewData["Title"]</h2>
+                <a class="btn btn-secondary btn-sm" asp-page="/Study">Back</a>
+            </div>
+
+            @if (Model.Items.Count == 0)
+            {
+                <p class="text-muted">No videos yet.</p>
+            }
+            else
+            {
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.Items)
+                        {
+                            <tr>
+                                <td>@v.Title</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-page="/Watch" asp-route-id="@v.Id">Watch</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</section>

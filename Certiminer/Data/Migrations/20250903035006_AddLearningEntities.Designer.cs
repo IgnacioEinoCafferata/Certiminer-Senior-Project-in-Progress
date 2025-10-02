@@ -4,6 +4,7 @@ using Certiminer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Certiminer.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250903035006_AddLearningEntities")]
+    partial class AddLearningEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace Certiminer.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Certiminer.Models.AnswerQuestion", b =>
+            modelBuilder.Entity("Certiminer.Models.AnswerOption", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,7 +47,7 @@ namespace Certiminer.Data.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("AnswerQuestions");
+                    b.ToTable("AnswerOptions");
                 });
 
             modelBuilder.Entity("Certiminer.Models.Question", b =>
@@ -55,47 +58,29 @@ namespace Certiminer.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Explanation")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<int>("Order")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Prompt")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TestId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Type")
+                    b.Property<int>("VideoId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TestId");
+                    b.HasIndex("VideoId");
 
                     b.ToTable("Questions");
-                });
-
-            modelBuilder.Entity("Certiminer.Models.Test", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Tests");
                 });
 
             modelBuilder.Entity("Certiminer.Models.TestAttempt", b =>
@@ -112,9 +97,6 @@ namespace Certiminer.Data.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("int");
 
-                    b.Property<int>("TestId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Total")
                         .HasColumnType("int");
 
@@ -122,11 +104,49 @@ namespace Certiminer.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("VideoId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("TestId");
-
                     b.ToTable("TestAttempts");
+                });
+
+            modelBuilder.Entity("Certiminer.Models.Video", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Videos");
                 });
 
             modelBuilder.Entity("Certiminer.Models.VideoProgress", b =>
@@ -148,12 +168,15 @@ namespace Certiminer.Data.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("VideoId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId", "VideoId")
+                        .IsUnique();
 
                     b.ToTable("VideoProgresses");
                 });
@@ -360,42 +383,7 @@ namespace Certiminer.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Video", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SourceType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int?>("TestId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TestId");
-
-                    b.ToTable("Videos");
-                });
-
-            modelBuilder.Entity("Certiminer.Models.AnswerQuestion", b =>
+            modelBuilder.Entity("Certiminer.Models.AnswerOption", b =>
                 {
                     b.HasOne("Certiminer.Models.Question", "Question")
                         .WithMany("Options")
@@ -408,24 +396,13 @@ namespace Certiminer.Data.Migrations
 
             modelBuilder.Entity("Certiminer.Models.Question", b =>
                 {
-                    b.HasOne("Certiminer.Models.Test", "Test")
+                    b.HasOne("Certiminer.Models.Video", "Video")
                         .WithMany("Questions")
-                        .HasForeignKey("TestId")
+                        .HasForeignKey("VideoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Test");
-                });
-
-            modelBuilder.Entity("Certiminer.Models.TestAttempt", b =>
-                {
-                    b.HasOne("Certiminer.Models.Test", "Test")
-                        .WithMany()
-                        .HasForeignKey("TestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Test");
+                    b.Navigation("Video");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -479,26 +456,14 @@ namespace Certiminer.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Video", b =>
-                {
-                    b.HasOne("Certiminer.Models.Test", "Test")
-                        .WithMany("Videos")
-                        .HasForeignKey("TestId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Test");
-                });
-
             modelBuilder.Entity("Certiminer.Models.Question", b =>
                 {
                     b.Navigation("Options");
                 });
 
-            modelBuilder.Entity("Certiminer.Models.Test", b =>
+            modelBuilder.Entity("Certiminer.Models.Video", b =>
                 {
                     b.Navigation("Questions");
-
-                    b.Navigation("Videos");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,11 +1,14 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Certiminer</title>
 
-    <!-- Core styles -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Certiminer.styles.css" asp-append-version="true" />
@@ -13,56 +16,88 @@
 </head>
 <body class="overflow-x-hidden">
 
-    <header>
-        <div class="d-flex justify-content-between align-items-center flex-wrap container">
-            <div class="logo d-flex align-items-center">
-                <a href="/" class="text-decoration-none d-flex align-items-center">
-                    <span style="font-size: 50px; font-weight: bold; color: #FFD700;">CER</span>
-                    <img src="/Images/pickaxe-icon.png" alt="Pickaxe Icon" width="60px" class="mx-2" />
-                    <span style="font-size: 50px; font-weight: bold; color: #FFD700;">IMINE</span>
-                </a>
-            </div>
-            <div class="d-flex gap-3 flex-wrap mt-3 mt-md-0">
-                @using Microsoft.AspNetCore.Identity
-                @inject SignInManager<IdentityUser> SignInManager
-                @inject UserManager<IdentityUser> UserManager
+    <header class="header-bar">
+        <div class="container d-flex justify-content-between align-items-center py-2 flex-wrap">
+            <!-- Logo -->
+            <a asp-page="/Index" class="text-decoration-none d-flex align-items-center">
+                <span style="font-size:50px;font-weight:bold;color:#FFD700;">CER</span>
+                <img id="brandPickaxe" src="~/Images/pickaxe-icon.png" alt="Pickaxe Icon" width="60" class="mx-2" />
+                <span style="font-size:50px;font-weight:bold;color:#FFD700;">IMINE</span>
+            </a>
 
+            <!-- NAV: SOLO para usuarios logueados -->
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <nav class="d-flex gap-3 align-items-center">
+                    <a class="btn btn-yellow" asp-page="/Study">Study Material</a>
+                    <a class="btn btn-yellow" asp-page="/Tests">Take Test</a>
+                    <a class="btn btn-yellow" asp-page="/Progress">Progress</a>
+                </nav>
+            }
+
+            <!-- Right-side buttons -->
+            <div class="d-flex gap-2 mt-3 mt-md-0">
                 @if (SignInManager.IsSignedIn(User))
                 {
-                        <div class="d-flex align-items-center gap-2">
-                            <a href="/Identity/Account/Manage" class="nav-item btn-yellow">@($"Hello {User.Identity.Name}!")</a>
-                            <a href="javascript:void(0);" onclick="document.getElementById('logoutForm').submit();" class="nav-item btn-yellow">Logout</a>
-                            <form id="logoutForm" method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })" style="display:none;"></form>
-                        </div>
-                  
-
+                    <a class="btn btn-yellow" asp-area="Identity" asp-page="/Account/Manage/Index">
+                        Hello @User.Identity?.Name!
+                    </a>
+                    <form method="post" class="d-inline m-0"
+                          asp-area="Identity" asp-page="/Account/Logout"
+                          asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">
+                        <button type="submit" class="btn btn-yellow btn-logout">Logout</button>
+                    </form>
                 }
                 else
                 {
-                    <a class="nav-item btn-yellow" href="/Identity/Account/Register">Register</a>
-                    <a class="nav-item btn-yellow" href="/Identity/Account/Login">Log In</a>
+                    <a class="btn btn-yellow" asp-area="Identity" asp-page="/Account/Register">Register</a>
+                    <a class="btn btn-yellow" asp-area="Identity" asp-page="/Account/Login">Log In</a>
                 }
             </div>
         </div>
     </header>
 
-    <!-- Main content rendered here -->
     <main role="main" class="pb-3">
         @RenderBody()
     </main>
 
-    <!-- Footer -->
     <footer class="footer text-muted">
         <div class="container">
             &copy; 2025 - Certiminer - <a asp-area="" asp-page="/Privacy">Privacy</a>
         </div>
     </footer>
 
-    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Pickaxe color sampler -->
+    <script>
+        (function(){
+          function setVars(hex){
+            const lighten=(h,amt=28)=>{let n=parseInt(h.slice(1),16),R=(n>>16)&255,G=(n>>8)&255,B=n&255;
+              R=Math.min(255,R+amt); G=Math.min(255,G+amt); B=Math.min(255,B+amt);
+              return "#"+((R<<16)|(G<<8)|B).toString(16).padStart(6,"0");};
+            document.documentElement.style.setProperty('--brand-blue',hex);
+            document.documentElement.style.setProperty('--brand-blue-accent',lighten(hex));
+          }
+          function sample(img){
+            try{
+              const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+              const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(img,0,0);
+              const d=x.getImageData(0,0,c.width,c.height).data; let r=0,g=0,b=0,w=0;
+              for(let i=0;i<d.length;i+=4){const R=d[i],G=d[i+1],B=d[i+2],A=d[i+3];
+                if(A<160)continue; if(R>240&&G>240&&B>240)continue; if(R+G+B<60)continue;
+                if(!(B>R+15 && B>G+15))continue; const sat=Math.max(R,G,B)-Math.min(R,G,B);
+                const bias=(B+1)/(R+G+B+1); const wt=1+sat/255+bias; r+=R*wt; g+=G*wt; b+=B*wt; w+=wt;}
+              if(!w)return; const R=Math.round(r/w),G=Math.round(g/w),B=Math.round(b/w);
+              const hex="#"+[R,G,B].map(v=>v.toString(16).padStart(2,'0')).join(''); setVars(hex);
+            }catch{}
+          }
+          const img=document.getElementById('brandPickaxe'); if(!img) return;
+          if(img.complete) sample(img); else img.addEventListener('load',()=>sample(img),{once:true});
+        })();
+    </script>
 </body>
 </html>

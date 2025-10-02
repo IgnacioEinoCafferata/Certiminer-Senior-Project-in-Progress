@@ -1,19 +1,15 @@
 ﻿@page
-@model IndexModel
+@model Certiminer.Pages.IndexModel
 @{
     ViewData["Title"] = "Home";
 }
-
-<div style="
-    background-color: white;
-    padding: 40px;
-    border-radius: 16px;
-    max-width: 600px;
-    margin: 60px auto;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    color: black;
-    text-align: center;
-">
-    <h1>Welcome to Certiminer!</h1>
-</div>
-
+<section class="position-relative">
+    <!-- your background image is coming from site.css; keep as-is -->
+    <div class="container py-5" style="min-height: 60vh;">
+        <h1 class="display-5 fw-bold text-white">Welcome to Certiminer</h1>
+        <p class="lead text-white-50">
+            Watch the training videos, unlock the tests, and track your progress.
+        </p>
+        <!-- removed the blue login/register links here -->
+    </div>
+</section>

@@ -1,0 +1,125 @@
+﻿@page "/Admin/AdminQuestionEdit"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+@model Certiminer.Pages.Admin.AdminQuestionEditModel
+@{
+    ViewData["Title"] = Model.IsEdit ? $"Edit Question — {Model.TestTitle}" : $"Add Question — {Model.TestTitle}";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <h2 class="mb-3">@ViewData["Title"]</h2>
+
+            <form method="post" id="qForm">
+                <input type="hidden" asp-for="Input.TestId" />
+                <input type="hidden" asp-for="Input.QuestionId" />
+
+                <div class="mb-3">
+                    <label class="form-label">Question Text</label>
+                    <input asp-for="Input.Prompt" class="form-control" />
+                    <span asp-validation-for="Input.Prompt" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label d-block">Answer Choices</label>
+
+                    <!-- filas dinámicas -->
+                    <div id="opts">
+                        @for (int i = 0; i < Model.Input.Options.Count; i++)
+                        {
+                            var opt = Model.Input.Options[i];
+                            <div class="input-group mb-2 option-row" data-index="@i">
+                                <input type="hidden" name="Input.Options[@i].Id" value="@opt.Id" />
+                                <span class="input-group-text">
+                                    <input class="form-check-input mt-0"
+                                           type="radio"
+                                           name="Input.CorrectIndex"
+                                           value="@i"
+                                    @(Model.Input.CorrectIndex == i ? "checked" : null) />
+                                </span>
+                                <input class="form-control"
+                                       name="Input.Options[@i].Text"
+                                       value="@opt.Text"
+                                       placeholder="Answer text..." />
+                                <button type="button" class="btn btn-outline-danger remove-opt">Remove</button>
+                            </div>
+                        }
+                    </div>
+
+                    <button type="button" id="addOpt" class="btn btn-outline-primary">+ Add option</button>
+                    <div class="form-text mt-2">Select the circle for the correct answer. (Min: 2 options)</div>
+                    <span class="text-danger">@Model.TempError</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Active</label>
+                    <select asp-for="Input.IsActive" class="form-select">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-yellow">Save</button>
+                <a class="btn btn-secondary"
+                   asp-page="/Admin/AdminQuestions"
+                   asp-route-testId="@Model.Input.TestId">Cancel</a>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // crea una fila de opción
+        function makeRow(i, idVal, textVal) {
+            const row = document.createElement('div');
+            row.className = 'input-group mb-2 option-row';
+            row.dataset.index = i;
+            row.innerHTML = `
+                <input type="hidden" name="Input.Options[${i}].Id" value="${idVal || 0}">
+                <span class="input-group-text">
+                    <input class="form-check-input mt-0" type="radio" name="Input.CorrectIndex" value="${i}">
+                </span>
+                <input class="form-control" name="Input.Options[${i}].Text" value="${textVal || ''}" placeholder="Answer text...">
+                <button type="button" class="btn btn-outline-danger remove-opt">Remove</button>`;
+            return row;
+        }
+
+        // renumera los name="Input.Options[i]..."
+        function renumber() {
+            const rows = document.querySelectorAll('#opts .option-row');
+            rows.forEach((row, idx) => {
+                row.dataset.index = idx;
+                // hidden id
+                row.querySelector('input[type=hidden]').setAttribute('name', `Input.Options[${idx}].Id`);
+                // radio (correct)
+                const radio = row.querySelector('input[type=radio]');
+                radio.value = idx;
+                radio.setAttribute('name', 'Input.CorrectIndex'); // todos comparten el mismo name
+                // text
+                row.querySelector('input.form-control').setAttribute('name', `Input.Options[${idx}].Text`);
+            });
+        }
+
+        document.getElementById('addOpt').addEventListener('click', function () {
+            const container = document.getElementById('opts');
+            const idx = container.querySelectorAll('.option-row').length;
+            container.appendChild(makeRow(idx, 0, ''));
+        });
+
+        document.getElementById('opts').addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-opt')) {
+                const container = document.getElementById('opts');
+                const rows = container.querySelectorAll('.option-row');
+                if (rows.length <= 2) {
+                    alert('A question needs at least 2 options.');
+                    return;
+                }
+                e.target.closest('.option-row').remove();
+                renumber();
+            }
+        });
+    </script>
+}

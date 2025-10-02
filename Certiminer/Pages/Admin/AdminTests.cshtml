@@ -1,0 +1,49 @@
+﻿@page "/Admin/AdminTests"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+@model Certiminer.Pages.Admin.AdminTestsModel
+@{
+    ViewData["Title"] = "Tests (Admin)";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <h2 class="mb-3">Tests (Admin)</h2>
+
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items?.Any() == true)
+                    {
+                        foreach (var t in Model.Items)
+                        {
+                            <tr>
+                                <td>@t.Title</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-page="/Admin/AdminQuestions"
+                                       asp-route-testId="@t.Id">Edit</a>
+
+                                    <a class="btn btn-outline-danger btn-sm"
+                                       asp-page="/Admin/AdminTestDelete"
+                                       asp-route-testId="@t.Id">Delete</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="2" class="text-muted">No tests yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+
+            <a class="btn btn-yellow mt-3" asp-page="/Admin/AdminTestEdit">+ Add New Test</a>
+        </div>
+    </div>
+</section>

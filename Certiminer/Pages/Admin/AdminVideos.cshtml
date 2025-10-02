@@ -1,0 +1,52 @@
+﻿@page "/Admin/AdminVideos"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+@model Certiminer.Pages.Admin.AdminVideosModel
+@{
+    ViewData["Title"] = "Videos (Admin)";
+}
+
+<section class="page-wrap">
+    <div class="container">
+        <div class="glass-panel">
+            <h2 class="mb-3">Videos (Admin)</h2>
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items?.Any() == true)
+                    {
+                        foreach (var v in Model.Items)
+                        {
+                            <tr>
+                                <td>@v.Title</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-page="/Admin/AdminVideoEdit"
+                                       asp-route-id="@v.Id">Edit</a>
+
+                                    <form method="post"
+                                          asp-page-handler="Delete"
+                                          asp-route-id="@v.Id"
+                                          class="d-inline ms-1"
+                                          onsubmit="return confirm('Delete this video?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="2" class="text-muted">No videos yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+
+            <a class="btn btn-yellow mt-3" asp-page="/Admin/AdminVideoCreate">+ Add Video</a>
+        </div>
+    </div>
+</section>

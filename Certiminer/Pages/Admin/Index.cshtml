@@ -1,0 +1,17 @@
+﻿@page "/Admin"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+@model Certiminer.Pages.Admin.AdminIndexModel
+@{
+    ViewData["Title"] = "Admin";
+}
+
+<section class="page-wrap">
+    <div class="glass-panel text-center">
+        <h1 class="mb-4">Admin</h1>
+
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a class="btn btn-yellow btn-pill-lg" asp-page="/Admin/AdminVideos">Manage Videos</a>
+            <a class="btn btn-yellow btn-pill-lg" asp-page="/Admin/AdminTests">Manage Tests</a>
+        </div>
+    </div>
+</section>

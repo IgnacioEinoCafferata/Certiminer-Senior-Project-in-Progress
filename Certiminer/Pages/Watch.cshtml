@@ -1,0 +1,37 @@
+﻿@page "/watch/{id:int}"
+@model Certiminer.Pages.WatchModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<h2>@Model.Title</h2>
+
+@if (!string.IsNullOrWhiteSpace(Model.EmbedUrl))
+{
+    <div class="ratio ratio-16x9">
+        <iframe src="@Model.EmbedUrl"
+                title="@Model.Title"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen>
+        </iframe>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        No pudimos embeber el video.
+        @if (!string.IsNullOrEmpty(Model.EmbedUrl))
+        {
+            <div class="ratio ratio-16x9">
+                <iframe src="@Model.EmbedUrl" allowfullscreen></iframe>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">No pudimos embeber el video.</div>
+        }
+
+    </div>
+}
