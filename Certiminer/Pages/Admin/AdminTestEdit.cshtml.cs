@@ -21,6 +21,9 @@ namespace Certiminer.Pages.Admin
         public string PageTitle => Input.Id > 0 ? "Edit Test" : "Add Test";
         public List<Folder> Chapters { get; private set; } = new();
 
+        // para volver a la lista de preguntas
+        [BindProperty(SupportsGet = true)] public string? ReturnUrl { get; set; }
+
         [BindProperty] public InputModel Input { get; set; } = new();
 
         public class InputModel
@@ -30,16 +33,22 @@ namespace Certiminer.Pages.Admin
             [Required, StringLength(256)]
             public string Title { get; set; } = string.Empty;
 
-            public bool IsActive { get; set; } = true;
+            [StringLength(2048)]
+            public string? ImageUrl { get; set; }
 
+            public bool IsActive { get; set; } = true;
             public int? FolderId { get; set; } // Chapter
         }
 
+        private Task<List<Folder>> LoadChaptersAsync(CancellationToken ct) =>
+            _db.Folders.AsNoTracking()
+               .Where(f => f.Kind == FolderKind.Chapters)
+               .OrderBy(f => f.Name)
+               .ToListAsync(ct);
+
         public async Task<IActionResult> OnGetAsync(int? id, CancellationToken ct = default)
         {
-            Chapters = await _db.Folders.AsNoTracking()
-                .Where(f => f.Kind == FolderKind.Chapters)
-                .OrderBy(f => f.Name).ToListAsync(ct);
+            Chapters = await LoadChaptersAsync(ct);
 
             if (id is null || id <= 0) return Page();
 
@@ -50,6 +59,7 @@ namespace Certiminer.Pages.Admin
             {
                 Id = t.Id,
                 Title = t.Title,
+                ImageUrl = t.ImageUrl,
                 IsActive = t.IsActive,
                 FolderId = t.FolderId
             };
@@ -57,20 +67,17 @@ namespace Certiminer.Pages.Admin
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync(CancellationToken ct)
+        public async Task<IActionResult> OnPostAsync(string? returnUrl, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-            {
-                Chapters = await _db.Folders.AsNoTracking()
-                    .Where(f => f.Kind == FolderKind.Chapters)
-                    .OrderBy(f => f.Name).ToListAsync(ct);
-                return Page();
-            }
+            Chapters = await LoadChaptersAsync(ct); // por si hay que redisplayear el form
+
+            if (!ModelState.IsValid) return Page();
 
             Test entity;
             if (Input.Id > 0)
             {
-                entity = await _db.Tests.FirstAsync(x => x.Id == Input.Id, ct);
+                entity = await _db.Tests.FirstOrDefaultAsync(x => x.Id == Input.Id, ct)
+                         ?? throw new KeyNotFoundException($"Test {Input.Id} not found");
             }
             else
             {
@@ -81,8 +88,14 @@ namespace Certiminer.Pages.Admin
             entity.Title = Input.Title.Trim();
             entity.IsActive = Input.IsActive;
             entity.FolderId = Input.FolderId;
+            entity.ImageUrl = string.IsNullOrWhiteSpace(Input.ImageUrl) ? null : Input.ImageUrl.Trim();
 
             await _db.SaveChangesAsync(ct);
+
+            // Volver a donde viniste (por ejemplo /Admin/AdminQuestions?testId=20)
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+                return Redirect(returnUrl);
+
             return RedirectToPage("/Admin/AdminTests");
         }
     }

@@ -8,6 +8,10 @@
             <h2>@(Model.Input.Id > 0 ? "Edit Test" : "Add Test")</h2>
 
             <form method="post">
+                <!-- MUY IMPORTANTE: para que no cree uno nuevo -->
+                <input type="hidden" asp-for="Input.Id" />
+                <input type="hidden" name="returnUrl" value="@(Model.ReturnUrl ?? string.Empty)" />
+
                 <div class="mb-3">
                     <label asp-for="Input.Title" class="form-label"></label>
                     <input asp-for="Input.Title" class="form-control" />
@@ -25,15 +29,18 @@
                             }
                         </select>
 
-                        <!-- usa el path físico de la página -->
                         <a href="@Url.Page("/Admin/AdminChapters")"
-                           class="btn btn-outline-secondary">
-                            Manage chapters
-                        </a>
+                           class="btn btn-outline-secondary">Manage chapters</a>
                     </div>
-                   </div>
+                </div>
 
-
+                <div class="mb-3">
+                    <label class="form-label">Image URL (optional)</label>
+                    <input asp-for="Input.ImageUrl" class="form-control"
+                           placeholder="/img/tests/sample.jpg or https://…" />
+                    <span class="text-muted small">Shown in the tests list. Leave empty to use the default icon.</span>
+                    <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
+                </div>
 
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" asp-for="Input.IsActive" />

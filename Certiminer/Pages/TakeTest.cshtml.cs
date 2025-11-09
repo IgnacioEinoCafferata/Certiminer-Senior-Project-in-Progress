@@ -4,16 +4,26 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Certiminer.Data;
+using Certiminer.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Certiminer.Pages
 {
+    [Authorize]
     public class TakeTestModel : PageModel
     {
         private readonly ApplicationDbContext _db;
-        public TakeTestModel(ApplicationDbContext db) => _db = db;
+        private readonly UserManager<IdentityUser> _um;
+
+        public TakeTestModel(ApplicationDbContext db, UserManager<IdentityUser> um)
+        {
+            _db = db;
+            _um = um;
+        }
 
         public TestDto? Test { get; private set; }
         public List<QuestionVm> Questions { get; private set; } = new();
@@ -34,7 +44,10 @@ namespace Certiminer.Pages
         // ---------- POST ----------
         public async Task<IActionResult> OnPostAsync(int testId, CancellationToken ct = default)
         {
-            Submitted = true;
+            // Obtener usuario actual
+            var user = await _um.GetUserAsync(User);
+            if (user is null) return Unauthorized();
+
             await LoadTestAsync(testId, ct);
             if (Test is null) return NotFound();
 
@@ -53,7 +66,7 @@ namespace Certiminer.Pages
                 }
             }
 
-            // Marcar seleccionados y calcular puntaje
+            // Calcular puntaje
             Score = 0;
             TotalQuestions = Questions.Count;
 
@@ -66,7 +79,25 @@ namespace Certiminer.Pages
                     Score++;
             }
 
-            return Page();
+            // *** GUARDAR EN BASE DE DATOS ***
+            var attempt = new TestAttempt
+            {
+                UserId = user.Id,
+                TestId = testId,
+                Score = Score,
+                Total = TotalQuestions,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _db.TestAttempts.Add(attempt);
+            await _db.SaveChangesAsync(ct);
+
+            // *** REDIRIGIR A PROGRESS ***
+            TempData["LastTestScore"] = Score;
+            TempData["LastTestTotal"] = TotalQuestions;
+            TempData["LastTestTitle"] = Test.Title;
+
+            return RedirectToPage("/Progress");
         }
 
         // ---------- Helpers ----------
@@ -87,26 +118,24 @@ namespace Certiminer.Pages
             }
 
             // Preguntas del test
-            // Preguntas del test
             var qList = await _db.Questions
                 .AsNoTracking()
                 .Where(q => q.TestId == testId && q.IsActive)
-                .OrderBy(q => q.Order)        // mejor que por Id, ya que tenés Order
+                .OrderBy(q => q.Order)
                 .Select(q => new QuestionVm
                 {
                     Id = q.Id,
-                    Text = q.Prompt           // <<--- acá el cambio (antes: q.Text)
+                    Text = q.Prompt
                 })
                 .ToListAsync(ct);
 
             Questions = qList;
 
-
             if (Questions.Count == 0) return;
 
             var qIds = Questions.Select(q => q.Id).ToList();
 
-            // Opciones (tabla: AnswerQuestions) -> Id, QuestionId, Text, IsCorrect
+            // Opciones
             var options = await _db.AnswerQuestions
                 .AsNoTracking()
                 .Where(a => qIds.Contains(a.QuestionId))

@@ -13,8 +13,10 @@ namespace Certiminer.Infrastructure
         /// </summary>
         public static string? Extract(string input)
         {
-            if (string.IsNullOrWhiteSpace(input)) return null;
-            input = input.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            var s = input.Trim();
 
             if (IdRegex.IsMatch(input)) return input;
 

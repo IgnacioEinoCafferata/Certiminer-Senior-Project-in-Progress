@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Certiminer.Data;
 using Certiminer.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,44 +15,42 @@ namespace Certiminer.Pages.Admin
     public class AdminQuestionsModel : PageModel
     {
         private readonly ApplicationDbContext _db;
-        public AdminQuestionsModel(ApplicationDbContext db) { _db = db; }
+        public AdminQuestionsModel(ApplicationDbContext db) => _db = db;
 
-        [BindProperty(SupportsGet = true)] public int TestId { get; set; }
-        public string TestTitle { get; set; } = "";
-        public List<Question> Items { get; set; } = new();
+        public Test Test { get; private set; } = default!;
+        public List<Question> Items { get; private set; } = new();
 
-        public async Task<IActionResult> OnGetAsync()
+        // GET /Admin/AdminQuestions?testId=123
+        public async Task<IActionResult> OnGetAsync(int testId, CancellationToken ct = default)
         {
-            var test = await _db.Tests.FirstOrDefaultAsync(x => x.Id == TestId);
-            if (test == null) return NotFound();
+            // Carga el test + preguntas
+            Test = await _db.Tests
+                .AsNoTracking()
+                .Include(t => t.Questions)
+                .FirstOrDefaultAsync(t => t.Id == testId, ct)
+                ?? null!;
 
-            TestTitle = test.Title;
-            Items = await _db.Questions
-                             .Where(q => q.TestId == TestId)
-                             .OrderBy(q => q.Order)
-                             .ToListAsync();
+            if (Test == null)
+                return NotFound();
+
+            Items = Test.Questions
+                .OrderBy(q => q.Order)
+                .ThenBy(q => q.Id)
+                .ToList();
+
             return Page();
         }
 
-        public async Task<IActionResult> OnPostDeleteAsync(int questionId)
+        // POST /Admin/AdminQuestions?handler=Delete&id=5&testId=123
+        public async Task<IActionResult> OnPostDeleteAsync(int id, int testId, CancellationToken ct = default)
         {
-            var q = await _db.Questions.FirstOrDefaultAsync(x => x.Id == questionId && x.TestId == TestId);
-            if (q == null) return RedirectToPage(new { TestId });
+            var q = await _db.Questions.FirstOrDefaultAsync(x => x.Id == id && x.TestId == testId, ct);
+            if (q == null) return NotFound();
 
-            // borro opciones + pregunta
-            var opts = _db.AnswerQuestions.Where(o => o.QuestionId == q.Id);
-            _db.AnswerQuestions.RemoveRange(opts);
             _db.Questions.Remove(q);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
 
-            // reordenar
-            var rest = await _db.Questions.Where(x => x.TestId == TestId)
-                                          .OrderBy(x => x.Order)
-                                          .ToListAsync();
-            for (int i = 0; i < rest.Count; i++) rest[i].Order = i;
-            await _db.SaveChangesAsync();
-
-            return RedirectToPage(new { TestId });
+            return RedirectToPage("/Admin/AdminQuestions", new { testId });
         }
     }
 }
