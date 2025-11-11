@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Certiminer.Data;
 using Certiminer.Models;
+using Certiminer.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Certiminer.Repositories

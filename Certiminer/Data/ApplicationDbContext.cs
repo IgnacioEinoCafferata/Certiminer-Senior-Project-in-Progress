@@ -9,6 +9,8 @@ namespace Certiminer.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         // ====== TUS ENTIDADES EXISTENTES ======
+
+
         public DbSet<Question> Questions => Set<Question>();
         public DbSet<AnswerQuestion> AnswerQuestions => Set<AnswerQuestion>();
         public DbSet<TestAttempt> TestAttempts => Set<TestAttempt>();

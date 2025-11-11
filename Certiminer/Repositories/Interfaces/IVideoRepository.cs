@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Certiminer.Models;
 
-namespace Certiminer.Repositories
+namespace Certiminer.Repositories.Interfaces
 {
     public interface IVideoRepository
     {

@@ -1,56 +1,54 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Certiminer.Data;
 using Certiminer.Models;
+using Certiminer.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Certiminer.Pages.Admin
 {
     [Authorize(Policy = "AdminOnly")]
     public class AdminQuestionsModel : PageModel
     {
-        private readonly ApplicationDbContext _db;
-        public AdminQuestionsModel(ApplicationDbContext db) => _db = db;
+        private readonly ITestRepository _tests;
+        private readonly IQuestionRepository _questions;
+        private readonly IUnitOfWork _uow;                        // <—
 
-        public Test Test { get; private set; } = default!;
+        public AdminQuestionsModel(
+            ITestRepository tests,
+            IQuestionRepository questions,
+            IUnitOfWork uow)                                      // <—
+        {
+            _tests = tests;
+            _questions = questions;
+            _uow = uow;                                           // <—
+        }
+
+        [BindProperty(SupportsGet = true)] public int testId { get; set; }
+
+        public Test? Test { get; private set; }
         public List<Question> Items { get; private set; } = new();
 
-        // GET /Admin/AdminQuestions?testId=123
-        public async Task<IActionResult> OnGetAsync(int testId, CancellationToken ct = default)
+        public async Task<IActionResult> OnGetAsync(CancellationToken ct = default)
         {
-            // Carga el test + preguntas
-            Test = await _db.Tests
-                .AsNoTracking()
-                .Include(t => t.Questions)
-                .FirstOrDefaultAsync(t => t.Id == testId, ct)
-                ?? null!;
+            Test = await _tests.GetByIdAsync(testId, includeQuestions: false, ct);
+            if (Test is null) return NotFound();
 
-            if (Test == null)
-                return NotFound();
-
-            Items = Test.Questions
-                .OrderBy(q => q.Order)
-                .ThenBy(q => q.Id)
-                .ToList();
-
+            var list = await _questions.ListByTestAsync(Test.Id, ct);
+            Items = list.ToList();
             return Page();
         }
 
-        // POST /Admin/AdminQuestions?handler=Delete&id=5&testId=123
-        public async Task<IActionResult> OnPostDeleteAsync(int id, int testId, CancellationToken ct = default)
+        // NEW: Delete question
+        public async Task<IActionResult> OnPostDeleteAsync(int testId, int id, CancellationToken ct = default)
         {
-            var q = await _db.Questions.FirstOrDefaultAsync(x => x.Id == id && x.TestId == testId, ct);
-            if (q == null) return NotFound();
+            var q = await _questions.GetByIdAsync(id, ct);
+            if (q is null || q.TestId != testId) return NotFound();
 
-            _db.Questions.Remove(q);
-            await _db.SaveChangesAsync(ct);
+            await _questions.DeleteAsync(id, ct);
+            await _uow.SaveChangesAsync(ct);
 
-            return RedirectToPage("/Admin/AdminQuestions", new { testId });
+            TempData["ok"] = "Question deleted.";
+            return RedirectToPage(new { testId });
         }
     }
 }

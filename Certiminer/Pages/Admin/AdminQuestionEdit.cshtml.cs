@@ -5,16 +5,27 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Certiminer.Repositories.Interfaces;
+
 
 namespace Certiminer.Pages.Admin
 {
     [Authorize(Policy = "AdminOnly")]
     public class AdminQuestionEditModel : PageModel
     {
-        private readonly ApplicationDbContext _db;
-        public AdminQuestionEditModel(ApplicationDbContext db) { _db = db; }
+        private readonly ITestRepository _tests;
 
-        // UI
+        private readonly ApplicationDbContext _db;
+        public AdminQuestionEditModel(ApplicationDbContext db, ITestRepository tests)
+        {
+            _db = db;
+            _tests = tests;
+        }
+
+        // querystring: /Admin/AdminQuestionEdit?testId=21&id=36
+        [BindProperty(SupportsGet = true)] public int testId { get; set; }
+        [BindProperty(SupportsGet = true)] public int? id { get; set; }
+
         public bool IsEdit => Input.QuestionId.HasValue && Input.QuestionId.Value > 0;
         public string TestTitle { get; private set; } = "";
         public string TempError { get; private set; } = "";
@@ -36,90 +47,81 @@ namespace Certiminer.Pages.Admin
 
             public bool IsActive { get; set; } = true;
 
-            // índice del radio seleccionado
+            // índice (0..N-1) de la respuesta correcta
             public int CorrectIndex { get; set; } = 0;
 
-            // opciones dinámicas
             public List<OptionVM> Options { get; set; } = new();
         }
 
         [BindProperty] public InputVM Input { get; set; } = new();
 
         // -------------- GET --------------
-        public async Task<IActionResult> OnGetAsync(int testId, int? questionId)
+        public async Task<IActionResult> OnGetAsync(CancellationToken ct = default)
         {
-            var test = await _db.Tests.FirstOrDefaultAsync(t => t.Id == testId);
-            if (test == null) return NotFound();
+            // título del test
+            TestTitle = await _tests.GetTitleAsync(testId, ct) ?? "";
 
-            TestTitle = test.Title;
 
-            if (questionId is null)
+            if (id is null || id <= 0)
             {
-                // Alta: arranco con 2 opciones vacías
+                // Alta: 2 opciones vacías por defecto
                 Input = new InputVM
                 {
                     TestId = testId,
                     Prompt = "",
                     IsActive = true,
                     CorrectIndex = 0,
-                    Options = new List<OptionVM>
-                    {
-                        new OptionVM(),
-                        new OptionVM()
-                    }
+                    Options = new List<OptionVM> { new(), new() }
                 };
+                return Page();
             }
-            else
+
+            // Edición: cargar pregunta
+            var q = await _db.Questions.AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == id.Value && x.TestId == testId, ct);
+            if (q is null) return NotFound();
+
+            // Cargar respuestas de AnswerQuestions por FK
+            var answers = await _db.AnswerQuestions.AsNoTracking()
+                               .Where(a => a.QuestionId == q.Id)
+                               .OrderBy(a => a.Id)
+                               .ToListAsync(ct);
+
+            var correctIdx = answers.FindIndex(a => a.IsCorrect);
+
+            Input = new InputVM
             {
-                var q = await _db.Questions
-                                 .Include(x => x.Options)
-                                 .FirstOrDefaultAsync(x => x.Id == questionId && x.TestId == testId);
-                if (q == null) return NotFound();
+                TestId = testId,
+                QuestionId = q.Id,
+                // En tu modelo la pregunta se guarda como "Text"; el VM usa "Prompt"
+                Prompt = q.Prompt,
+                IsActive = q.IsActive,
+                CorrectIndex = correctIdx < 0 ? 0 : correctIdx,
+                Options = answers.Select(a => new OptionVM { Id = a.Id, Text = a.Text }).ToList()
+            };
 
-                TestTitle = test.Title;
-
-                var ordered = q.Options.OrderBy(o => o.Id).ToList();
-                var correctIdx = ordered.FindIndex(o => o.IsCorrect);
-
-                Input = new InputVM
-                {
-                    TestId = testId,
-                    QuestionId = q.Id,
-                    Prompt = q.Prompt,
-                    IsActive = q.IsActive,
-                    CorrectIndex = correctIdx < 0 ? 0 : correctIdx,
-                    Options = ordered.Select(o => new OptionVM { Id = o.Id, Text = o.Text }).ToList()
-                };
-
-                if (Input.Options.Count < 2)
-                {
-                    // garantizo al menos 2 visible
-                    while (Input.Options.Count < 2) Input.Options.Add(new OptionVM());
-                }
-            }
+            // garantizar al menos 2 opciones visibles
+            while (Input.Options.Count < 2) Input.Options.Add(new OptionVM());
 
             return Page();
         }
 
         // -------------- POST --------------
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(CancellationToken ct = default)
         {
-            var test = await _db.Tests.FirstOrDefaultAsync(t => t.Id == Input.TestId);
-            if (test == null) return NotFound();
-            TestTitle = test.Title;
+            TestTitle = await _tests.GetTitleAsync(Input.TestId, ct) ?? "";
 
-            // Normalizo/valido opciones
-            var opts = (Input.Options ?? new()).Where(o => !string.IsNullOrWhiteSpace(o.Text))
-                                               .Select(o => new OptionVM { Id = o.Id, Text = o.Text.Trim() })
-                                               .ToList();
+            // Normalizar opciones (sólo las con texto)
+            var opts = (Input.Options ?? new())
+                        .Where(o => !string.IsNullOrWhiteSpace(o.Text))
+                        .Select(o => new OptionVM { Id = o.Id, Text = o.Text.Trim() })
+                        .ToList();
 
             if (opts.Count < 2)
             {
                 TempError = "Please add at least 2 options.";
-                // re-hidrato para mostrar lo que el usuario escribió
-                Input.Options = Input.Options ?? new();
-                if (Input.Options.Count < 2)
-                    while (Input.Options.Count < 2) Input.Options.Add(new OptionVM());
+                Input.Options ??= new();
+                while (Input.Options.Count < 2) Input.Options.Add(new OptionVM());
                 return Page();
             }
 
@@ -136,22 +138,21 @@ namespace Certiminer.Pages.Admin
                 return Page();
             }
 
-            if (Input.QuestionId is null)
+            // === Alta ===
+            if (Input.QuestionId is null || Input.QuestionId <= 0)
             {
-                // Alta
                 var q = new Question
                 {
                     TestId = Input.TestId,
-                    Prompt = Input.Prompt.Trim(),
+                    Prompt = Input.Prompt.Trim(),             // mapeo Prompt -> Text
                     Type = QuestionType.SingleChoice,
-                    Order = await _db.Questions.CountAsync(x => x.TestId == Input.TestId),
+                    Order = await _db.Questions.CountAsync(x => x.TestId == Input.TestId, ct),
                     IsActive = Input.IsActive,
                 };
 
                 _db.Questions.Add(q);
-                await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync(ct);            // necesito el Id de la pregunta
 
-                // opciones
                 for (int i = 0; i < opts.Count; i++)
                 {
                     _db.AnswerQuestions.Add(new AnswerQuestion
@@ -162,30 +163,40 @@ namespace Certiminer.Pages.Admin
                     });
                 }
 
-                await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync(ct);
             }
+            // === Edición ===
             else
             {
-                // Edición
-                var q = await _db.Questions.Include(x => x.Options)
-                                           .FirstOrDefaultAsync(x => x.Id == Input.QuestionId && x.TestId == Input.TestId);
-                if (q == null) return NotFound();
+                var q = await _db.Questions
+                                 .FirstOrDefaultAsync(x => x.Id == Input.QuestionId && x.TestId == Input.TestId, ct);
+                if (q is null) return NotFound();
 
                 q.Prompt = Input.Prompt.Trim();
                 q.IsActive = Input.IsActive;
 
-                // mapear existentes
-                var postedIds = new HashSet<int>(opts.Select(o => o.Id));
+                // Traer opciones existentes desde la BD
+                var existing = await _db.AnswerQuestions
+                                        .Where(a => a.QuestionId == q.Id)
+                                        .OrderBy(a => a.Id)
+                                        .ToListAsync(ct);
 
-                // actualizar/crear
+                // Map para lookup rápido por Id
+                var byId = existing.ToDictionary(a => a.Id);
+
+                // IDs posteados (para borrado diferencial)
+                var postedIds = new HashSet<int>(opts.Where(o => o.Id > 0).Select(o => o.Id));
+
+                // actualizar o crear
                 for (int i = 0; i < opts.Count; i++)
                 {
                     var o = opts[i];
-                    if (o.Id > 0)
+                    var isCorrect = (i == Input.CorrectIndex);
+
+                    if (o.Id > 0 && byId.TryGetValue(o.Id, out var dbOpt))
                     {
-                        var dbOpt = q.Options.First(x => x.Id == o.Id);
                         dbOpt.Text = o.Text;
-                        dbOpt.IsCorrect = (i == Input.CorrectIndex);
+                        dbOpt.IsCorrect = isCorrect;
                     }
                     else
                     {
@@ -193,17 +204,17 @@ namespace Certiminer.Pages.Admin
                         {
                             QuestionId = q.Id,
                             Text = o.Text,
-                            IsCorrect = (i == Input.CorrectIndex)
+                            IsCorrect = isCorrect
                         });
                     }
                 }
 
                 // borrar las que ya no están
-                var toRemove = q.Options.Where(x => !postedIds.Contains(x.Id)).ToList();
+                var toRemove = existing.Where(a => !postedIds.Contains(a.Id)).ToList();
                 if (toRemove.Count > 0)
                     _db.AnswerQuestions.RemoveRange(toRemove);
 
-                await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync(ct);
             }
 
             return RedirectToPage("/Admin/AdminQuestions", new { testId = Input.TestId });

@@ -3,20 +3,27 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Certiminer.Data;
 using Certiminer.Models;
+using Certiminer.Repositories.Interfaces;   // <-- repos + UoW
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace Certiminer.Pages.Admin
 {
     [Authorize(Policy = "AdminOnly")]
     public class AdminTestEditModel : PageModel
     {
-        private readonly ApplicationDbContext _db;
-        public AdminTestEditModel(ApplicationDbContext db) => _db = db;
+        private readonly ITestRepository _tests;
+        private readonly IFolderRepository _folders;
+        private readonly IUnitOfWork _uow;
+
+        public AdminTestEditModel(ITestRepository tests, IFolderRepository folders, IUnitOfWork uow)
+        {
+            _tests = tests;
+            _folders = folders;
+            _uow = uow;
+        }
 
         public string PageTitle => Input.Id > 0 ? "Edit Test" : "Add Test";
         public List<Folder> Chapters { get; private set; } = new();
@@ -40,11 +47,14 @@ namespace Certiminer.Pages.Admin
             public int? FolderId { get; set; } // Chapter
         }
 
-        private Task<List<Folder>> LoadChaptersAsync(CancellationToken ct) =>
-            _db.Folders.AsNoTracking()
-               .Where(f => f.Kind == FolderKind.Chapters)
-               .OrderBy(f => f.Name)
-               .ToListAsync(ct);
+        private async Task<List<Folder>> LoadChaptersAsync(CancellationToken ct)
+        {
+            // Traemos todos los folders con repo y filtramos por Kind = Chapters
+            var all = await _folders.ListAsync(ct);
+            return all.Where(f => f.Kind == FolderKind.Chapters)
+                      .OrderBy(f => f.Name)
+                      .ToList();
+        }
 
         public async Task<IActionResult> OnGetAsync(int? id, CancellationToken ct = default)
         {
@@ -52,7 +62,7 @@ namespace Certiminer.Pages.Admin
 
             if (id is null || id <= 0) return Page();
 
-            var t = await _db.Tests.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            var t = await _tests.GetByIdAsync(id.Value, includeQuestions: false, ct);
             if (t is null) return NotFound();
 
             Input = new InputModel
@@ -73,26 +83,32 @@ namespace Certiminer.Pages.Admin
 
             if (!ModelState.IsValid) return Page();
 
-            Test entity;
             if (Input.Id > 0)
             {
-                entity = await _db.Tests.FirstOrDefaultAsync(x => x.Id == Input.Id, ct)
-                         ?? throw new KeyNotFoundException($"Test {Input.Id} not found");
+                var entity = await _tests.GetByIdAsync(Input.Id, ct: ct);
+                if (entity is null) return NotFound();
+
+                entity.Title = Input.Title.Trim();
+                entity.IsActive = Input.IsActive;
+                entity.FolderId = Input.FolderId;
+                entity.ImageUrl = string.IsNullOrWhiteSpace(Input.ImageUrl) ? null : Input.ImageUrl.Trim();
+
+                await _tests.UpdateAsync(entity);
             }
             else
             {
-                entity = new Test();
-                _db.Tests.Add(entity);
+                var entity = new Test
+                {
+                    Title = Input.Title.Trim(),
+                    IsActive = Input.IsActive,
+                    FolderId = Input.FolderId,
+                    ImageUrl = string.IsNullOrWhiteSpace(Input.ImageUrl) ? null : Input.ImageUrl.Trim()
+                };
+                await _tests.AddAsync(entity, ct);
             }
 
-            entity.Title = Input.Title.Trim();
-            entity.IsActive = Input.IsActive;
-            entity.FolderId = Input.FolderId;
-            entity.ImageUrl = string.IsNullOrWhiteSpace(Input.ImageUrl) ? null : Input.ImageUrl.Trim();
+            await _uow.SaveChangesAsync(ct);
 
-            await _db.SaveChangesAsync(ct);
-
-            // Volver a donde viniste (por ejemplo /Admin/AdminQuestions?testId=20)
             if (!string.IsNullOrWhiteSpace(returnUrl))
                 return Redirect(returnUrl);
 

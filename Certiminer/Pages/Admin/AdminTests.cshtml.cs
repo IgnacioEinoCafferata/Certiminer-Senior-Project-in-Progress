@@ -6,20 +6,22 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Certiminer.Repositories.Interfaces;
 
 namespace Certiminer.Pages.Admin
 {
     [Authorize(Policy = "AdminOnly")]
     public class AdminTestsModel : PageModel
     {
-        private readonly ApplicationDbContext _db;
-        public AdminTestsModel(ApplicationDbContext db) { _db = db; }
+        private readonly ITestRepository _tests;
+        public AdminTestsModel(ITestRepository tests) => _tests = tests;
 
-        public List<Test> Items { get; set; } = new();
+        public List<Test> Items { get; private set; } = new();
 
-        public async Task OnGetAsync()
+        public async Task OnGetAsync(CancellationToken ct)
         {
-            Items = await _db.Tests.OrderBy(t => t.Title).ToListAsync();
+            var all = await _tests.ListAsync(ct);
+            Items = all.ToList();
         }
     }
 }
