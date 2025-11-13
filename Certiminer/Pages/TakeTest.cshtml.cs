@@ -25,6 +25,12 @@ namespace Certiminer.Pages
             _um = um;
         }
 
+        private Task<bool> HasCompletedAsync(string userId, int testId, CancellationToken ct) =>
+    _db.TestAttempts
+       .AsNoTracking()
+       .AnyAsync(a => a.UserId == userId && a.TestId == testId, ct);
+
+
         public TestDto? Test { get; private set; }
         public List<QuestionVm> Questions { get; private set; } = new();
 
@@ -35,18 +41,53 @@ namespace Certiminer.Pages
         // ---------- GET ----------
         public async Task<IActionResult> OnGetAsync(int testId, CancellationToken ct = default)
         {
+            var user = await _um.GetUserAsync(User);
+            if (user is null) return Challenge();
+
+            // Si ya hizo este test -> mensaje + redirect a /Tests
+            if (await HasCompletedAsync(user.Id, testId, ct))
+            {
+                var title = await _db.Tests.AsNoTracking()
+                                           .Where(t => t.Id == testId)
+                                           .Select(t => t.Title)
+                                           .FirstOrDefaultAsync(ct);
+
+                TempData["AlreadyCompleted"] =
+                    string.IsNullOrEmpty(title)
+                    ? "You have already completed this test."
+                    : $"You have already completed the test \"{title}\".";
+
+                return RedirectToPage("/Tests");
+            }
+
             await LoadTestAsync(testId, ct);
             if (Test is null) return NotFound();
 
             return Page();
         }
 
+
         // ---------- POST ----------
         public async Task<IActionResult> OnPostAsync(int testId, CancellationToken ct = default)
         {
-            // Obtener usuario actual
             var user = await _um.GetUserAsync(User);
             if (user is null) return Unauthorized();
+
+            // Seguridad extra: si ya tiene intento, no lo dejamos
+            if (await HasCompletedAsync(user.Id, testId, ct))
+            {
+                var title = await _db.Tests.AsNoTracking()
+                                           .Where(t => t.Id == testId)
+                                           .Select(t => t.Title)
+                                           .FirstOrDefaultAsync(ct);
+
+                TempData["AlreadyCompleted"] =
+                    string.IsNullOrEmpty(title)
+                    ? "You have already completed this test."
+                    : $"You have already completed the test \"{title}\".";
+
+                return RedirectToPage("/Tests");
+            }
 
             await LoadTestAsync(testId, ct);
             if (Test is null) return NotFound();
@@ -99,6 +140,7 @@ namespace Certiminer.Pages
 
             return RedirectToPage("/Progress");
         }
+
 
         // ---------- Helpers ----------
         private async Task LoadTestAsync(int testId, CancellationToken ct)

@@ -20,6 +20,11 @@ public sealed class TestAttemptRepository : ITestAttemptRepository
 
     public Task AddAsync(TestAttempt entity, CancellationToken ct = default) =>
         _db.TestAttempts.AddAsync(entity, ct).AsTask();
+    public async Task<bool> HasCompletedAsync(string userId, int testId, CancellationToken ct = default) =>
+    await _db.TestAttempts
+             .AsNoTracking()
+             .AnyAsync(a => a.UserId == userId && a.TestId == testId, ct);
+
 
     public Task UpdateAsync(TestAttempt entity)
     {

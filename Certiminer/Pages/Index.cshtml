@@ -1,15 +1,102 @@
 ﻿@page
 @model Certiminer.Pages.IndexModel
-@{
-    ViewData["Title"] = "Home";
-}
-<section class="position-relative">
-    <!-- your background image is coming from site.css; keep as-is -->
-    <div class="container py-5" style="min-height: 60vh;">
-        <h1 class="display-5 fw-bold text-white">Welcome to Certiminer</h1>
-        <p class="lead text-white-50">
-            Watch the training videos, unlock the tests, and track your progress.
-        </p>
-        <!-- removed the blue login/register links here -->
+
+<section class="page-wrap">
+    <div class="glass-panel py-5 px-4 px-md-5 home-hero">
+
+        <!-- Título principal -->
+        <div class="text-center mb-4">
+            <h1 class="mb-2">
+                Welcome to <span class="fw-bold">Certiminer</span>
+            </h1>
+            <h5 class="text-muted mb-0">
+                Online training for safer mining operations
+            </h5>
+        </div>
+
+        <!-- Texto en inglés -->
+        <div class="row justify-content-center mb-3">
+            <div class="col-lg-8">
+                <p class="lead mb-2 text-center">
+                    Turn mine safety training into something clear, practical, and easy to track.
+                </p>
+                <ul class="mb-3">
+                    <li>Study safety material at your own pace with videos and visual guides.</li>
+                    <li>Practice with tests that feel like the real certification exams.</li>
+                    <li>See your progress and scores in one place, so you always know what’s left.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Extra description (all English) -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <hr />
+                <p class="mb-2 fw-semibold text-center">
+                    Built for real mine training environments
+                </p>
+                <p class="mb-3">
+                    Certiminer is designed for miners, trainers, and safety coordinators who need
+                    clear, consistent training. Use it to introduce new workers to key procedures,
+                    refresh experienced crews, and document that everyone has completed the required
+                    safety checks.
+                </p>
+            </div>
+        </div>
+
+        <!-- Call to action -->
+        <div class="text-center mt-4">
+            @if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                <p class="mb-3">
+                    You can explore the site without an account.  
+                    When you’re ready to start training, log in to save your progress.
+                </p>
+
+                <a asp-area="Identity" asp-page="/Account/Login"
+                   class="btn btn-warning btn-lg me-2">
+                    Log in to start training
+                </a>
+                <a asp-area="Identity" asp-page="/Account/Register"
+                   class="btn btn-primary btn-lg">
+                    Create account
+                </a>
+
+            }
+            else
+            {
+                <p class="mb-3">
+                    Welcome back! Choose where you want to continue:
+                </p>
+
+                <a asp-page="/Study" class="btn btn-warning btn-lg me-2">
+                    Study Material
+                </a>
+                <a asp-page="/Tests" class="btn btn-outline-light btn-lg me-2">
+                    Take Test
+                </a>
+                <a asp-page="/Progress" class="btn btn-outline-light btn-lg">
+                    View Progress
+                </a>
+            }
+        </div>
+
+        <div class="text-center mt-4 text-muted small">
+            <em>Safe miners are trained miners. Start preparing today.</em>
+        </div>
     </div>
 </section>
+
+<style>
+    /* Si querés, podes ajustar un poco el hero sin tocar el resto del sitio */
+    .home-hero h1 {
+        font-size: 2.4rem;
+    }
+
+   @@media (min-width: 992px) {
+        .home-hero h1 {
+            font-size: 2.8rem;
+        }
+    }
+</style>
+
